@@ -33,7 +33,7 @@ tokens = [
     'NUMBER','MINUS',
     'PLUS','TIMES','DIVIDE',
     'LPAREN','RPAREN', 'AND', 'OR', 'SEMICOLON', 'NAME',
-    'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE'
+    'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE', 'PLUSPLUS'
  ] + list(reserved.values())
 
 # Tokens
@@ -53,6 +53,7 @@ t_SEMICOLON = r';'
 t_EQUALS = r'='
 t_SUPP = r'<'
 t_INF = r'>'
+t_PLUSPLUS = r'\+\+'
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -106,6 +107,10 @@ def p_statement_variable(p):
     'statement : NAME EQUALS expression'
     p[0] = ('assign', p[1], p[3])
     # print(var)
+
+def p_statement_increment_one(p):
+    'statement : NAME PLUSPLUS'
+    p[0] = ('incrementone', p[1])
 
 def p_statement_if(p):
     '''statement : IF LPAREN expression RPAREN LBRACE bloc RBRACE
@@ -188,7 +193,9 @@ def evalStatement(t):
             evalStatement(t[2])
     if t[0] == 'assign' :
         var[t[1]] = evalExpression(t[2])
-        pass #TODO
+    if t[0] == 'incrementone':
+        var[t[1]] = evalExpression(t[1]) + 1
+    if t[0] == 'increment1' : var (evalExpression(t[1]))+1
     if t[0] == 'empty':
         return 
 
