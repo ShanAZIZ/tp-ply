@@ -13,8 +13,7 @@ from generateTreeGraphviz import printTreeGraph
 
 reserved = {
     'if' : 'IF',
-    # 'then' : 'THEN',
-    #'else' : 'ELSE',
+    'else' : 'ELSE',
     'while' : 'WHILE',
     'print' : 'PRINT',
     'T' : 'TRUE',
@@ -109,8 +108,11 @@ def p_statement_variable(p):
     # print(var)
 
 def p_statement_if(p):
-    'statement : IF LPAREN expression RPAREN LBRACE bloc RBRACE'
-    p[0] = ('if', p[3], p[6])
+    '''statement : IF LPAREN expression RPAREN LBRACE bloc RBRACE
+            |      IF LPAREN expression RPAREN LBRACE bloc RBRACE ELSE LBRACE bloc RBRACE'''
+
+    if len(p) == 8: p[0] = ('if', p[3], p[6])
+    else : p[0] = ('if', p[3], p[6], p[10])
 
 def p_statement_while(p):
     'statement : WHILE LPAREN expression RPAREN LBRACE bloc RBRACE'
@@ -191,8 +193,14 @@ def evalStatement(t):
         return 
 
     if t[0] == 'if':
-        if evalExpression(t[1]) == True:
-            evalStatement(t[2])
+        if len(t) == 2 :
+            if evalExpression(t[1]) == True:
+                evalStatement(t[2])
+        else :
+            if evalExpression(t[1]) == True:
+                evalStatement(t[2])
+            else :
+                evalStatement(t[3])
 
     if t[0] == 'while':
         while evalExpression(t[1]):
