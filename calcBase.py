@@ -2,11 +2,6 @@
 # calc.py
 #
 # Expressions arithmétiques sans variables
-#
-# TODO: Modifier les expressions pour qu'ils génerent un arbre
-# TODO: Modifier les statements pour qu'ils génerent un arbre 
-# TODO: Fonction eval des expressions
-# TODO: Fonction eval des statements
 # -----------------------------------------------------------------------------
 
 from generateTreeGraphviz import printTreeGraph
@@ -31,14 +26,16 @@ precedence = (
 
 tokens = [
     'NUMBER','MINUS',
-    'PLUS','TIMES','DIVIDE',
+    'PLUS', 'PLUSPLUS','TIMES', 'MINUSMINUS','DIVIDE',
     'LPAREN','RPAREN', 'AND', 'OR', 'SEMICOLON', 'NAME',
     'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE'
  ] + list(reserved.values())
 
 # Tokens
 t_PLUS    = r'\+'
+t_PLUSPLUS = r'\+\+'
 t_MINUS   = r'-'
+t_MINUSMINUS = r'\-\-'
 t_TIMES   = r'\*'
 t_DIVIDE  = r'/'
 t_LPAREN  = r'\('
@@ -107,6 +104,7 @@ def p_statement_variable(p):
     p[0] = ('assign', p[1], p[3])
     # print(var)
 
+
 def p_statement_if(p):
     '''statement : IF LPAREN expression RPAREN LBRACE bloc RBRACE
             |      IF LPAREN expression RPAREN LBRACE bloc RBRACE ELSE LBRACE bloc RBRACE'''
@@ -135,6 +133,18 @@ def p_expression_parse(p):
                 |   expression INF expression
     '''
     p[0] = (p[2], p[1], p[3])
+
+def p_incr_expression_parse(p):
+    '''
+    expression : expression PLUSPLUS
+    '''
+    p[0] = ('increase', p[1])
+
+def p_decr_expression_parse(p):
+    '''
+    expression : NAME MINUSMINUS
+    '''
+    p[0] = ('decrease', p[1])
 
     
 def p_expression_group(p):
@@ -189,6 +199,13 @@ def evalStatement(t):
     if t[0] == 'assign' :
         var[t[1]] = evalExpression(t[2])
         pass #TODO
+
+    if t[0] == 'increase':
+        var[t[1]] = evalExpression(t[1]) + 1
+
+    if t[0] == 'decrease':
+        var[t[1]] = evalExpression(t[1]) - 1
+
     if t[0] == 'empty':
         return 
 
