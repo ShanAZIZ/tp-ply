@@ -28,7 +28,7 @@ tokens = [
     'NUMBER','MINUS',
     'PLUS', 'PLUSPLUS','TIMES', 'MINUSMINUS','DIVIDE',
     'LPAREN','RPAREN', 'AND', 'OR', 'SEMICOLON', 'NAME',
-    'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE'
+    'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE', 'PLUSPLUS'
  ] + list(reserved.values())
 
 # Tokens
@@ -50,6 +50,7 @@ t_SEMICOLON = r';'
 t_EQUALS = r'='
 t_SUPP = r'<'
 t_INF = r'>'
+t_PLUSPLUS = r'\+\+'
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -103,7 +104,6 @@ def p_statement_variable(p):
     'statement : NAME EQUALS expression'
     p[0] = ('assign', p[1], p[3])
     # print(var)
-
 
 def p_statement_if(p):
     '''statement : IF LPAREN expression RPAREN LBRACE bloc RBRACE
