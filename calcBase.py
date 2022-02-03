@@ -10,6 +10,7 @@ reserved = {
     'if' : 'IF',
     'else' : 'ELSE',
     'while' : 'WHILE',
+    'for' : 'FOR',
     'print' : 'PRINT',
     'T' : 'TRUE',
     'F': 'FALSE',
@@ -85,7 +86,7 @@ var = {}
 def p_start(p):
     'START : bloc'
     p[0] = ('start', p[1])
-    evalStatement(p[0])
+    eval_inst(p[0])
     printTreeGraph(p[0])
 
 def p_bloc(p): #A|Ab|b
@@ -96,8 +97,6 @@ def p_bloc(p): #A|Ab|b
     else :
         p[0] = ('bloc', p[1],  'empty')
 
-
-
 def p_statement_print(p):
     'statement : PRINT LPAREN expression RPAREN'
     p[0] = ('print', p[3])
@@ -107,6 +106,31 @@ def p_statement_variable(p):
     'statement : NAME EQUALS expression'
     p[0] = ('assign', p[1], p[3])
     # print(var)
+
+def p_statement_incr_parse(p):
+    '''
+    statement : NAME PLUSPLUS
+    '''
+    p[0] = ('increase', p[1])
+
+
+def p_statement_plus_equal_parse(p):
+    '''
+    statement : NAME PLUSEQUALS NUMBER
+    '''
+    p[0] = ('add', p[1], p[3])
+
+def p_statement_minus_equal_parse(p):
+    '''
+    statement : NAME MINUSEQUALS NUMBER
+    '''
+    p[0] = ('substract', p[1], p[3])
+
+def p_statement_decr_parse(p):
+    '''
+    statement : NAME MINUSMINUS
+    '''
+    p[0] = ('decrease', p[1])
 
 def p_statement_if(p):
     '''statement : IF LPAREN expression RPAREN LBRACE bloc RBRACE
@@ -119,9 +143,9 @@ def p_statement_while(p):
     'statement : WHILE LPAREN expression RPAREN LBRACE bloc RBRACE'
     p[0] = ('while', p[3], p[6])
 
-def p_statement_expr(p):
-    'statement : expression'
-    p[0] = p[1]
+def p_statement_for(p):
+    'statement : FOR LPAREN statement SEMICOLON expression SEMICOLON statement RPAREN LBRACE bloc RBRACE'
+    p[0] = ('for', p[3], p[5], p[7], p[10])
 
 
 def p_expression_parse(p):
@@ -136,31 +160,6 @@ def p_expression_parse(p):
                 |   expression INF expression
     '''
     p[0] = (p[2], p[1], p[3])
-
-def p_incr_expression_incr_parse(p):
-    '''
-    expression : NAME PLUSPLUS
-    '''
-    p[0] = ('increase', p[1])
-
-
-def p_expression_plus_equal_parse(p):
-    '''
-    expression : NAME PLUSEQUALS NUMBER
-    '''
-    p[0] = ('add', p[1], p[3])
-
-def p_expression_minus_equal_parse(p):
-    '''
-    expression : NAME MINUSEQUALS NUMBER
-    '''
-    p[0] = ('substract', p[1], p[3])
-
-def p_decr_expression_parse(p):
-    '''
-    expression : NAME MINUSMINUS
-    '''
-    p[0] = ('decrease', p[1])
 
     
 def p_expression_group(p):
@@ -189,73 +188,83 @@ def p_expression_name(p):
 #     p[0] = p[1]
 
 def p_error(p):
-    print("Syntax error at '%s'" % p.value)
+    print(f"Syntax error at {p.value}")
 
-def evalExpression(t):
+def eval_expr(t):
     #print('eval de ',t)
     if type(t) == int : return t
     if type(t) == str: return var.get(t)
     if type(t) == bool: return t
     if type(t) == tuple : 
-        if t[0] == '+' : return evalExpression(t[1])+evalExpression(t[2])
-        if t[0] == '-' : return evalExpression(t[1])-evalExpression(t[2])
-        if t[0] == '*' : return evalExpression(t[1])*evalExpression(t[2])
-        if t[0] == '/' : return evalExpression(t[1])//evalExpression(t[2])
-        if t[0] == '&' : return bool(evalExpression(t[1])) and bool(evalExpression(t[2]))
-        if t[0] == '|' : return bool(evalExpression(t[1])) or bool(evalExpression(t[2]))
-        if t[0] == '>' : return (evalExpression(t[1]) > evalExpression(t[2]))
-        if t[0] == '<' : return (evalExpression(t[1]) < evalExpression(t[2]))
+        if t[0] == '+' : return eval_expr(t[1])+eval_expr(t[2])
+        if t[0] == '-' : return eval_expr(t[1])-eval_expr(t[2])
+        if t[0] == '*' : return eval_expr(t[1])*eval_expr(t[2])
+        if t[0] == '/' : return eval_expr(t[1])//eval_expr(t[2])
+        if t[0] == '&' : return bool(eval_expr(t[1])) and bool(eval_expr(t[2]))
+        if t[0] == '|' : return bool(eval_expr(t[1])) or bool(eval_expr(t[2]))
+        if t[0] == '>' : return (eval_expr(t[1]) > eval_expr(t[2]))
+        if t[0] == '<' : return (eval_expr(t[1]) < eval_expr(t[2]))
     return 'unknown'
      
 
-def evalStatement(t):
+def eval_inst(t):
     if type(t) is not tuple : 
         #print('tree not tuple', t)
         return 
-    if t[0] == 'start' : evalStatement(t[1])
+    if t[0] == 'start' : eval_inst(t[1])
     if t[0] == 'bloc' : 
-            evalStatement(t[1])
-            evalStatement(t[2])
+            eval_inst(t[1])
+            eval_inst(t[2])
     if t[0] == 'assign' :
-        var[t[1]] = evalExpression(t[2])
+        var[t[1]] = eval_expr(t[2])
         pass #TODO
 
     if t[0] == 'increase':
-        var[t[1]] = evalExpression(t[1]) + 1
+        var[t[1]] = eval_expr(t[1]) + 1
 
     if t[0] == 'decrease':
-        var[t[1]] = evalExpression(t[1]) - 1
+        var[t[1]] = eval_expr(t[1]) - 1
 
     if t[0] == 'add':
-        var[t[1]] = evalExpression(t[1]) + evalExpression(t[2])
+        var[t[1]] = eval_expr(t[1]) + eval_expr(t[2])
 
     if t[0] == 'substract':
-        var[t[1]] = evalExpression(t[1]) - evalExpression(t[2])
+        var[t[1]] = eval_expr(t[1]) - eval_expr(t[2])
 
     if t[0] == 'empty':
         return 
 
     if t[0] == 'if':
         if len(t) == 2 :
-            if evalExpression(t[1]) == True:
-                evalStatement(t[2])
+            if eval_expr(t[1]) == True:
+                eval_inst(t[2])
         else :
-            if evalExpression(t[1]) == True:
-                evalStatement(t[2])
+            if eval_expr(t[1]) == True:
+                eval_inst(t[2])
             else :
-                evalStatement(t[3])
+                eval_inst(t[3])
 
     if t[0] == 'while':
-        while evalExpression(t[1]):
-            evalStatement(t[2])
+        while eval_expr(t[1]):
+            eval_inst(t[2])
+
+    if t[0] == 'for':
+        eval_inst(t[1])
+        while eval_expr(t[2]):
+            eval_inst(t[4])
+            eval_inst(t[3])
 
     if t[0] == 'print':
-        print(evalExpression(t[1]))
+        print(eval_expr(t[1]))
     
 import ply.yacc as yacc
 yacc.yacc()
 
-s = input('calc > ')
-yacc.parse(s)
+data = ""
+with open ("code.txt", "r") as myfile:
+    data = myfile.read()
+
+# s = input('calc > ')
+yacc.parse(data)
 
     
