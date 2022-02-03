@@ -27,15 +27,19 @@ precedence = (
 tokens = [
     'NUMBER','MINUS',
     'PLUS', 'PLUSPLUS','TIMES', 'MINUSMINUS','DIVIDE',
+    'PLUSEQUALS',
+    'MINUSEQUALS',
     'LPAREN','RPAREN', 'AND', 'OR', 'SEMICOLON', 'NAME',
-    'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE', 'PLUSPLUS'
+    'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE'
  ] + list(reserved.values())
 
 # Tokens
 t_PLUS    = r'\+'
 t_PLUSPLUS = r'\+\+'
+t_PLUSEQUALS = r'\+='
 t_MINUS   = r'-'
 t_MINUSMINUS = r'\-\-'
+t_MINUSEQUALS = r'\-='
 t_TIMES   = r'\*'
 t_DIVIDE  = r'/'
 t_LPAREN  = r'\('
@@ -50,7 +54,6 @@ t_SEMICOLON = r';'
 t_EQUALS = r'='
 t_SUPP = r'<'
 t_INF = r'>'
-t_PLUSPLUS = r'\+\+'
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -134,11 +137,24 @@ def p_expression_parse(p):
     '''
     p[0] = (p[2], p[1], p[3])
 
-def p_incr_expression_parse(p):
+def p_incr_expression_incr_parse(p):
     '''
-    expression : expression PLUSPLUS
+    expression : NAME PLUSPLUS
     '''
     p[0] = ('increase', p[1])
+
+
+def p_expression_plus_equal_parse(p):
+    '''
+    expression : NAME PLUSEQUALS NUMBER
+    '''
+    p[0] = ('add', p[1], p[3])
+
+def p_expression_minus_equal_parse(p):
+    '''
+    expression : NAME MINUSEQUALS NUMBER
+    '''
+    p[0] = ('substract', p[1], p[3])
 
 def p_decr_expression_parse(p):
     '''
@@ -167,6 +183,10 @@ def p_expression_number(p):
 def p_expression_name(p):
     'expression : NAME'
     p[0] = p[1]
+
+# def p_expression_string(p):
+#     'expression : MESSAGE'
+#     p[0] = p[1]
 
 def p_error(p):
     print("Syntax error at '%s'" % p.value)
@@ -205,6 +225,12 @@ def evalStatement(t):
 
     if t[0] == 'decrease':
         var[t[1]] = evalExpression(t[1]) - 1
+
+    if t[0] == 'add':
+        var[t[1]] = evalExpression(t[1]) + evalExpression(t[2])
+
+    if t[0] == 'substract':
+        var[t[1]] = evalExpression(t[1]) - evalExpression(t[2])
 
     if t[0] == 'empty':
         return 
