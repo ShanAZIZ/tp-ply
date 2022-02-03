@@ -30,6 +30,8 @@ tokens = [
     'PLUS', 'PLUSPLUS','TIMES', 'MINUSMINUS','DIVIDE',
     'PLUSEQUALS',
     'MINUSEQUALS',
+    'SUPPEQUALS',
+    'INFEQUALS',
     'LPAREN','RPAREN', 'AND', 'OR', 'SEMICOLON', 'NAME',
     'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE'
  ] + list(reserved.values())
@@ -54,7 +56,9 @@ t_FALSE = r'FALSE'
 t_SEMICOLON = r';'
 t_EQUALS = r'='
 t_SUPP = r'<'
+t_SUPPEQUALS = r'<='
 t_INF = r'>'
+t_INFEQUALS = r'<='
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -158,6 +162,8 @@ def p_expression_parse(p):
                 |   expression OR expression
                 |   expression SUPP expression
                 |   expression INF expression
+                |   expression SUPPEQUALS expression
+                |   expression INFEQUALS expression
     '''
     p[0] = (p[2], p[1], p[3])
 
@@ -203,7 +209,10 @@ def eval_expr(t):
         if t[0] == '&' : return bool(eval_expr(t[1])) and bool(eval_expr(t[2]))
         if t[0] == '|' : return bool(eval_expr(t[1])) or bool(eval_expr(t[2]))
         if t[0] == '>' : return (eval_expr(t[1]) > eval_expr(t[2]))
+        if t[0] == '>=' : return (eval_expr(t[1]) >= eval_expr(t[2]))
         if t[0] == '<' : return (eval_expr(t[1]) < eval_expr(t[2]))
+        if t[0] == '<=' : return (eval_expr(t[1]) <= eval_expr(t[2]))
+        
     return 'unknown'
      
 
