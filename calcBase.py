@@ -12,6 +12,7 @@ reserved = {
     'while' : 'WHILE',
     'for' : 'FOR',
     'print' : 'PRINT',
+    'fonction': 'FONCTION',
     'T' : 'TRUE',
     'F': 'FALSE',
 }
@@ -33,7 +34,7 @@ tokens = [
     'SUPPEQUALS',
     'INFEQUALS',
     'LPAREN','RPAREN', 'AND', 'OR', 'SEMICOLON', 'NAME',
-    'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE'
+    'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE', 'COMMA'
  ] + list(reserved.values())
 
 # Tokens
@@ -54,6 +55,7 @@ t_AND = r'&'
 t_TRUE  = r'TRUE'
 t_FALSE = r'FALSE'
 t_SEMICOLON = r';'
+t_COMMA = r','
 t_EQUALS = r'='
 t_SUPP = r'<'
 t_SUPPEQUALS = r'<='
@@ -86,12 +88,13 @@ import ply.lex as lex
 lex.lex()
 
 var = {}
+func = {}
 
 def p_start(p):
     'START : bloc'
     p[0] = ('start', p[1])
     eval_inst(p[0])
-    # printTreeGraph(p[0])
+    printTreeGraph(p[0])
     print(p[0])
 
 def p_bloc(p): #A|Ab|b
@@ -101,6 +104,42 @@ def p_bloc(p): #A|Ab|b
         p[0] = ('bloc', p[1], p[2])
     else :
         p[0] = ('bloc', p[1],  'empty')
+
+def p_fonction(p):
+    '''statement : FONCTION NAME LPAREN RPAREN LBRACE bloc RBRACE 
+                |  FONCTION NAME LPAREN param RPAREN LBRACE bloc RBRACE
+    '''
+    if len(p) == 8 : 
+        p[0] = ('fonction', p[2], 'empty', p[6])
+    else : 
+        p[0] = ('fonction', p[2], p[4], p[7])
+
+def p_param(p):
+    '''param : NAME 
+            | NAME COMMA param
+    '''
+    if len(p) == 2 :
+        p[0] = ('param', p[1], 'empty')
+    else : 
+        p[0] = ('param', p[1], p[3])
+
+def p_fonction_call(p):
+    '''statement : NAME LPAREN RPAREN
+                | NAME LPAREN callparam RPAREN
+    '''
+    if len(p) == 4 :
+        p[0] = ('call', p[1], 'empty')
+    else :
+        p[0] = ('call', p[1], p[3])
+
+def p_fonction_call_param(p):
+    '''callparam : expression 
+            | expression COMMA callparam
+    '''
+    if len(p) == 2 :
+        p[0] = ('callparam', p[1], 'empty')
+    else : 
+        p[0] = ('callparam', p[1], p[3])
 
 def p_statement_print(p):
     'statement : PRINT LPAREN expression RPAREN'
@@ -221,13 +260,25 @@ def eval_inst(t):
     if type(t) is not tuple : 
         #print('tree not tuple', t)
         return 
+    
     if t[0] == 'start' : eval_inst(t[1])
+    
     if t[0] == 'bloc' : 
             eval_inst(t[1])
             eval_inst(t[2])
+
+    if t[0] == 'fonction':
+        func[t[1]] = (t[2], t[3])
+        print(func)
+    
+    if t[0] == 'call':
+        eval_inst(func[t[1]][1])
+
+    if t[0] == 'callparam':
+        print(t[0])
+    
     if t[0] == 'assign' :
         var[t[1]] = eval_expr(t[2])
-        pass #TODO
 
     if t[0] == 'increase':
         var[t[1]] = eval_expr(t[1]) + 1
