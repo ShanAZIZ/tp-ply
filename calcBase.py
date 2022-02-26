@@ -1,10 +1,11 @@
+import uuid
+import graphviz as gv
+
 # -----------------------------------------------------------------------------
 # calc.py
 #
 # Expressions arithmétiques sans variables
 # -----------------------------------------------------------------------------
-
-from generateTreeGraphviz import printTreeGraph
 
 reserved = {
     'if' : 'IF',
@@ -32,7 +33,7 @@ tokens = [
     'PLUSEQUALS',
     'MINUSEQUALS',
     'SUPPEQUALS',
-    'INFEQUALS',
+    'INFEQUALS', 'LHOOK', 'RHOOK',
     'LPAREN','RPAREN', 'AND', 'OR', 'SEMICOLON', 'NAME',
     'EQUALS', 'SUPP', 'INF', 'LBRACE', 'RBRACE', 'COMMA'
  ] + list(reserved.values())
@@ -50,6 +51,8 @@ t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
 t_LBRACE = r'{'
 t_RBRACE = r'}'
+t_LHOOK = r'\['
+t_RHOOK = r'\]'
 t_OR = r'\|'
 t_AND = r'&'
 t_TRUE  = r'TRUE'
@@ -89,12 +92,34 @@ lex.lex()
 
 var = {}
 func = {}
+tabs = {}
+
+def printTreeGraph(t):
+    graph = gv.Digraph(format='pdf')
+    graph.attr('node', shape='circle')
+    addNode(graph, t)
+    #graph.render(filename='img/graph') #Pour Sauvegarder
+    graph.view() #Pour afficher
+
+def addNode(graph, t):
+    myId = uuid.uuid4()
+
+    if type(t) != tuple:
+        graph.node(str(myId), label=str(t))
+        return myId
+
+    graph.node(str(myId), label=str(t[0]))
+    for i in range(1, len(t)):
+         graph.edge(str(myId), str(addNode(graph, t[i])), arrowsize='0')
+
+
+    return myId
 
 def p_start(p):
     'START : bloc'
     p[0] = ('start', p[1])
     eval_inst(p[0])
-    printTreeGraph(p[0])
+    # printTreeGraph(p[0])
     print(p[0])
 
 def p_bloc(p): #A|Ab|b
@@ -151,11 +176,18 @@ def p_statement_variable(p):
     p[0] = ('assign', p[1], p[3])
     # print(var)
 
+def p_statement_dict(p):
+    'statement : NAME EQUALS LHOOK expression RHOOK'
+    p[0] = ('dict', p[1], p[4])
+
+
 def p_statement_incr_parse(p):
     '''
     statement : NAME PLUSPLUS
     '''
     p[0] = ('increase', p[1])
+
+
 
 
 def p_statement_plus_equal_parse(p):
@@ -229,6 +261,11 @@ def p_expression_name(p):
     'expression : NAME'
     p[0] = p[1]
 
+
+def p_expression_get_from_dict(p):
+    'expression : NAME LHOOK expression RHOOK'
+    p[0] = ('getdict', p[1], p[3])
+
 # def p_expression_string(p):
 #     'expression : MESSAGE'
 #     p[0] = p[1]
@@ -269,16 +306,28 @@ def eval_inst(t):
 
     if t[0] == 'fonction':
         func[t[1]] = (t[2], t[3])
-        print(func)
     
     if t[0] == 'call':
+        """
+        ('param', a, ('param', b, c))
+        ('callparam', 1, ('callparam', 2, 3))
+        
+        """
+        func[t[1][0]]
         eval_inst(func[t[1]][1])
 
     if t[0] == 'callparam':
-        print(t[0])
-    
+        var[t[1]] = eval_expr(t[2])
+
     if t[0] == 'assign' :
         var[t[1]] = eval_expr(t[2])
+
+    if t[0] == 'dict' :
+        tabs[t[1]] = [0] *eval_expr(t[2])
+
+    if t[0] == 'getdict' : 
+        print(tabs[t[1]])
+        eval_expr(tabs[t[1]][eval_expr(t[2])])
 
     if t[0] == 'increase':
         var[t[1]] = eval_expr(t[1]) + 1
@@ -321,11 +370,5 @@ def eval_inst(t):
 import ply.yacc as yacc
 yacc.yacc()
 
-data = ""
-with open ("code.txt", "r") as myfile:
-    data = myfile.read()
-
-# s = input('calc > ')
-yacc.parse(data)
-
-    
+s = input('calc > ')
+yacc.parse(s)
