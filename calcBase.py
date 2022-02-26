@@ -91,7 +91,8 @@ def p_start(p):
     'START : bloc'
     p[0] = ('start', p[1])
     eval_inst(p[0])
-    printTreeGraph(p[0])
+    # printTreeGraph(p[0])
+    print(p[0])
 
 def p_bloc(p): #A|Ab|b
     '''bloc : bloc statement SEMICOLON 
